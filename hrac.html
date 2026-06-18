@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lůčin Kvíz 🌈</title>
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+:root {
+  --r:#E8344A; --o:#F4831F; --y:#F9C22E; --g:#3DAA55; --b:#3B82F6; --p:#8B5CF6; --pi:#EC4899;
+  --dark:#1a0a2e; --dark2:#2d1b4e; --card:#ffffff12; --card2:#ffffff20;
+  --text:#fff; --muted:rgba(255,255,255,0.6);
+}
+@keyframes gradShift {
+  0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%}
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes pop { 0%{transform:scale(0.8);opacity:0} 80%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0.6} }
+@keyframes confetti { 0%{transform:translateY(-10px) rotate(0deg);opacity:1} 100%{transform:translateY(100px) rotate(720deg);opacity:0} }
+@keyframes rainbow { 0%{color:var(--r)} 16%{color:var(--o)} 33%{color:var(--y)} 50%{color:var(--g)} 66%{color:var(--b)} 83%{color:var(--p)} 100%{color:var(--r)} }
+
+body {
+  font-family:'Nunito',sans-serif;
+  background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 30%, #1a2a4e 60%, #0a1a2e 100%);
+  color:var(--text);
+  min-height:100vh;
+  max-width:480px;
+  margin:0 auto;
+}
+.hidden { display:none !important; }
+
+/* RAINBOW BAR */
+.rainbow-bar {
+  height: 5px;
+  background: linear-gradient(90deg, var(--r), var(--o), var(--y), var(--g), var(--b), var(--p), var(--pi));
+  background-size: 200% 100%;
+  animation: gradShift 3s ease infinite;
+}
+
+/* JOIN SCREEN */
+.join-bg {
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 28px; text-align:center;
+  background: linear-gradient(160deg, #1a0a2e, #2d1b4e, #1a1a4e);
+  position:relative; overflow:hidden;
+}
+.join-bg::before {
+  content:'🌈✨💜🏳️‍🌈💖✨🌈';
+  position:absolute; top:20px; left:0; right:0;
+  font-size:24px; letter-spacing:8px; opacity:0.15;
+  animation:float 4s ease-in-out infinite;
+}
+.join-flag {
+  font-size:64px; margin-bottom:8px;
+  animation: float 3s ease-in-out infinite;
+}
+.join-title {
+  font-family:'Fredoka One',sans-serif;
+  font-size:38px;
+  background: linear-gradient(90deg, var(--r), var(--o), var(--y), var(--g), var(--b), var(--p));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-size: 200% auto;
+  animation: gradShift 4s ease infinite;
+  margin-bottom:6px; line-height:1.1;
+}
+.join-sub { font-size:15px; color:var(--muted); margin-bottom:36px; }
+.join-input {
+  width:100%; padding:16px 20px; border-radius:16px;
+  border:2px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.08);
+  color:white; font-size:18px; font-family:'Nunito',sans-serif;
+  margin-bottom:14px; outline:none; text-align:center;
+  backdrop-filter:blur(10px);
+  transition: border-color 0.2s;
+}
+.join-input::placeholder { color:rgba(255,255,255,0.3); }
+.join-input:focus { border-color:var(--p); }
+.join-btn {
+  width:100%; padding:16px; border-radius:16px;
+  background: linear-gradient(135deg, var(--p), var(--pi));
+  color:white; font-size:17px; font-weight:800;
+  border:none; cursor:pointer; font-family:'Nunito',sans-serif;
+  box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+  transition:all 0.2s;
+}
+.join-btn:active { transform:scale(0.96); }
+
+/* WAITING */
+.wait-bg {
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 28px; text-align:center;
+}
+.wait-orb {
+  width:80px; height:80px; border-radius:50%;
+  background: linear-gradient(135deg, var(--p), var(--pi), var(--b));
+  margin:0 auto 28px;
+  animation:pulse 1.8s ease-in-out infinite;
+  box-shadow: 0 0 40px rgba(139,92,246,0.5);
+}
+.wait-name { font-family:'Fredoka One',sans-serif; font-size:30px; margin-bottom:8px; }
+.wait-sub { font-size:14px; color:var(--muted); }
+.wait-dots { font-size:24px; margin-top:16px; animation:float 1.5s ease-in-out infinite; }
+
+/* GAME HEADER */
+.game-hdr {
+  background: linear-gradient(135deg, var(--dark2), #3d1b6e);
+  padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.hdr-name { font-weight:800; font-size:15px; }
+.hdr-score-val {
+  font-family:'Fredoka One',sans-serif; font-size:28px;
+  background: linear-gradient(135deg, var(--y), var(--o));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.hdr-score-lbl { color:var(--muted); font-size:11px; text-align:right; }
+
+/* TIMER BAR */
+.timer-bar-bg { height:4px; background:rgba(255,255,255,0.1); }
+.timer-bar {
+  height:4px;
+  background: linear-gradient(90deg, var(--r), var(--o), var(--y), var(--g), var(--b), var(--p));
+  transition:width 1s linear;
+}
+
+/* WAITING FOR Q */
+.wait-q { text-align:center; padding:60px 20px; }
+.wait-q-icon { font-size:56px; margin-bottom:16px; animation:float 2s ease-in-out infinite; }
+.wait-q-text { font-size:17px; font-weight:700; color:var(--muted); }
+
+/* ROUND PILL */
+.round-pill {
+  display:inline-flex; align-items:center; gap:6px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3));
+  border:1px solid rgba(139,92,246,0.4);
+  color:white; font-size:12px; font-weight:700;
+  padding:5px 14px; border-radius:20px;
+  margin:14px 16px 0; letter-spacing:0.5px;
+  backdrop-filter:blur(10px);
+}
+
+/* TIMER NUM */
+.timer-num {
+  text-align:center;
+  font-family:'Fredoka One',sans-serif; font-size:48px;
+  padding:4px 0;
+  background: linear-gradient(135deg, var(--y), var(--o));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.timer-num.warn {
+  background: linear-gradient(135deg, var(--r), var(--o));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  animation:shake 0.3s infinite;
+}
+
+/* QUESTION CARD */
+.q-card {
+  margin:10px 16px 0;
+  background:rgba(255,255,255,0.07);
+  border-radius:20px; padding:20px;
+  border:1px solid rgba(255,255,255,0.12);
+  backdrop-filter:blur(10px);
+  animation:pop 0.3s ease;
+}
+.q-num-lbl { font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+.q-main { font-size:18px; font-weight:700; line-height:1.5; }
+.q-pts {
+  display:inline-block; margin-top:10px;
+  font-size:12px; font-weight:800;
+  background: linear-gradient(135deg, var(--g), var(--b));
+  color:white; padding:4px 12px; border-radius:20px;
+}
+
+/* LIST */
+.list-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.list-chip {
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px; padding:8px 12px; font-size:14px; font-weight:600;
+}
+
+/* ANSWER */
+.ans-section { margin:12px 16px 0; }
+.ans-input {
+  width:100%; padding:16px 18px; border-radius:16px;
+  border:2px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.07);
+  color:white; font-size:16px; font-family:'Nunito',sans-serif;
+  resize:none; outline:none; min-height:80px;
+  transition:border-color 0.2s; backdrop-filter:blur(10px);
+}
+.ans-input::placeholder { color:rgba(255,255,255,0.3); }
+.ans-input:focus { border-color:var(--p); }
+.ans-input:disabled { opacity:0.45; }
+.submit-btn {
+  width:100%; margin-top:10px; padding:16px; border-radius:16px;
+  background: linear-gradient(135deg, var(--pi), var(--p));
+  color:white; font-size:16px; font-weight:800;
+  border:none; cursor:pointer; font-family:'Nunito',sans-serif;
+  box-shadow: 0 4px 20px rgba(236,72,153,0.35);
+  transition:all 0.15s;
+}
+.submit-btn:active { transform:scale(0.97); }
+.submit-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.submit-btn.done {
+  background: linear-gradient(135deg, var(--g), var(--b));
+  box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+}
+
+/* REVEAL */
+.reveal-box {
+  margin:12px 16px 0;
+  background: linear-gradient(135deg, rgba(61,170,85,0.2), rgba(59,130,246,0.2));
+  border:1px solid rgba(61,170,85,0.35);
+  border-radius:16px; padding:16px 20px; display:none;
+  backdrop-filter:blur(10px);
+  animation:pop 0.3s ease;
+}
+.reveal-box.on { display:block; }
+.reveal-lbl { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--g); margin-bottom:6px; }
+.reveal-val { font-size:20px; font-weight:800; }
+
+/* CLOSED */
+.closed-box {
+  margin:10px 16px 0;
+  background:rgba(244,131,31,0.15);
+  border:1px solid rgba(244,131,31,0.3);
+  border-radius:14px; padding:12px 18px;
+  font-size:14px; font-weight:700; text-align:center; display:none;
+  color:var(--o);
+}
+.closed-box.on { display:block; }
+
+/* SCOREBOARD */
+.sb-bg {
+  min-height:100vh; padding:40px 20px;
+  background: linear-gradient(160deg, #1a0a2e, #2d1b4e, #1a1a4e);
+}
+.sb-title {
+  font-family:'Fredoka One',sans-serif; font-size:38px; text-align:center;
+  margin-bottom:6px;
+  background: linear-gradient(90deg, var(--r), var(--o), var(--y), var(--g), var(--b), var(--p));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-size:200% auto; animation:gradShift 4s ease infinite;
+}
+.sb-sub { color:var(--muted); text-align:center; font-size:14px; margin-bottom:28px; }
+.sb-row {
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px; padding:14px 18px; margin-bottom:10px;
+  display:flex; align-items:center; gap:12px;
+  backdrop-filter:blur(10px);
+}
+.sb-row.me {
+  background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.2));
+  border-color:rgba(139,92,246,0.4);
+}
+.sb-rank { font-size:22px; min-width:32px; }
+.sb-name { flex:1; font-size:15px; font-weight:700; }
+.sb-pts { font-family:'Fredoka One',sans-serif; font-size:24px;
+  background: linear-gradient(135deg, var(--y), var(--o));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background: linear-gradient(135deg, var(--p), var(--pi));
+  color:white; padding:10px 22px; border-radius:30px;
+  font-size:14px; font-weight:700; z-index:999;
+  opacity:0; transition:opacity 0.3s; pointer-events:none;
+  white-space:nowrap;
+  box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+}
+.toast.on { opacity:1; }
+
+/* CONFETTI PARTICLES */
+.confetti-wrap { position:fixed; top:0; left:0; right:0; pointer-events:none; z-index:1000; overflow:hidden; height:100vh; }
+.confetti-p { position:absolute; top:-10px; font-size:20px; animation:confetti 2s ease-out forwards; }
+</style>
+</head>
+<body>
+<div class="rainbow-bar"></div>
+
+<!-- JOIN -->
+<div id="sJoin">
+  <div class="join-bg">
+    <div class="join-flag">🏳️‍🌈</div>
+    <div class="join-title">Lůčin Kvíz!</div>
+    <div class="join-sub">Rozlučkový večer plný zábavy ✨</div>
+    <input class="join-input" id="nameIn" type="text" placeholder="Tvoje jméno..." maxlength="20" autocomplete="off">
+    <button class="join-btn" onclick="doJoin()">Připojit se 🌈</button>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="sWait" class="hidden">
+  <div class="wait-bg">
+    <div class="wait-orb"></div>
+    <div class="wait-name" id="wName">Ahoj! 👋</div>
+    <div class="wait-sub">Čekám než moderátorka spustí kvíz...</div>
+    <div class="wait-dots">🌈</div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="sGame" class="hidden">
+  <div class="game-hdr">
+    <div>
+      <div class="hdr-name" id="gName">—</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:600;">HRÁČ</div>
+    </div>
+    <div>
+      <div class="hdr-score-val" id="gScore">0</div>
+      <div class="hdr-score-lbl">bodů</div>
+    </div>
+  </div>
+  <div class="timer-bar-bg"><div class="timer-bar" id="tBar"></div></div>
+
+  <div id="waitQ">
+    <div class="wait-q">
+      <div class="wait-q-icon">⏳</div>
+      <div class="wait-q-text">Čekám na otázku...</div>
+    </div>
+  </div>
+
+  <div id="activeQ" class="hidden">
+    <div class="round-pill" id="rPill">🔥 Kolo</div>
+    <div class="timer-num hidden" id="tNum">60</div>
+    <div class="q-card">
+      <div class="q-num-lbl" id="qLbl">Otázka 1</div>
+      <div class="q-main" id="qMain">—</div>
+      <div class="list-grid hidden" id="qList"></div>
+      <div id="qImgArea"></div>
+      <div class="q-pts" id="qPts">1 bod</div>
+    </div>
+    <div class="ans-section">
+      <textarea class="ans-input" id="ansIn" placeholder="Odpovědět" rows="3"></textarea>
+      <button class="submit-btn" id="subBtn" onclick="submitAns()">Odeslat odpověď ✓</button>
+    </div>
+    <div class="reveal-box" id="revBox">
+      <div class="reveal-lbl">✅ Správná odpověď</div>
+      <div class="reveal-val" id="revVal">—</div>
+      <div id="revImgArea"></div>
+    </div>
+    <div class="closed-box" id="closedBox">⏰ Odpovídání bylo uzavřeno</div>
+  </div>
+</div>
+
+<!-- SCOREBOARD -->
+<!-- SECTION INTRO -->
+<div id="sIntro" class="hidden">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;">
+    <div id="introIcon" style="font-size:72px;margin-bottom:16px;animation:float 2s ease-in-out infinite;">🎉</div>
+    <div id="introName" style="font-family:'Fredoka One',sans-serif;font-size:34px;margin-bottom:6px;background:linear-gradient(135deg,#EC4899,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">—</div>
+    <div id="introSub" style="font-size:15px;color:rgba(255,255,255,0.55);margin-bottom:28px;">—</div>
+    <div id="introRules" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:20px 24px;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.85);white-space:pre-wrap;text-align:left;max-width:420px;width:100%;"></div>
+    <div style="margin-top:24px;font-size:13px;color:rgba(255,255,255,0.35);">Čekej na moderátorku...</div>
+  </div>
+</div>
+
+<div id="sScore" class="hidden">
+  <div class="rainbow-bar"></div>
+  <div class="sb-bg">
+    <div class="sb-title">Výsledky! 🏆</div>
+    <div class="sb-sub">Konec kvízu — gratulujeme! 🎉</div>
+    <div id="sbList"></div>
+  </div>
+</div>
+
+<div class="confetti-wrap" id="confettiWrap"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PUSHER_KEY = 'b9d68ccf53cfd1732784';
+const PUSHER_CLUSTER = 'eu';
+const SERVER = '';
+const COLORS = ['#EC4899','#8B5CF6','#3B82F6','#3DAA55','#F9C22E','#F4831F','#E8344A'];
+const EMOJIS = ['🌈','✨','💜','🏳️‍🌈','💖','🎉','🌟'];
+
+let P = { id:null, name:'', score:0, color:null, answered:false, curQ:null, tMax:60 };
+
+function show(id) {
+  ['sJoin','sWait','sGame','sIntro','sScore'].forEach(s => document.getElementById(s).classList.toggle('hidden', s!==id));
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 2500);
+}
+
+function confetti() {
+  const wrap = document.getElementById('confettiWrap');
+  for(let i=0;i<12;i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-p';
+    el.textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+    el.style.left = Math.random()*100 + 'vw';
+    el.style.animationDelay = Math.random()*0.5 + 's';
+    el.style.fontSize = (16 + Math.random()*16) + 'px';
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+async function doJoin() {
+  const name = document.getElementById('nameIn').value.trim();
+  if (!name) { toast('Zadej prosím své jméno!'); return; }
+  P.name = name;
+  P.id = 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+  P.color = COLORS[Math.floor(Math.random()*COLORS.length)];
+  document.getElementById('wName').textContent = 'Ahoj, ' + name + '! 👋';
+  show('sWait');
+  try {
+    const res = await fetch(SERVER+'/join', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({id:P.id, name:P.name, color:P.color})
+    });
+    const d = await res.json();
+    if(d.gameStarted) { show('sGame'); document.getElementById('gName').textContent = P.name; }
+  } catch(e) { toast('❌ Nelze se připojit — zkontroluj WiFi'); }
+}
+
+const pusher = new Pusher(PUSHER_KEY, { cluster:PUSHER_CLUSTER });
+const ch = pusher.subscribe('quiz-channel');
+
+
+ch.bind('section-intro', d => {
+  show('sIntro');
+  document.getElementById('introIcon').textContent = d.icon;
+  document.getElementById('introName').textContent = d.name;
+  document.getElementById('introSub').textContent = d.subtitle || '';
+  document.getElementById('introRules').textContent = d.rules || '';
+  document.getElementById('introIcon').style.cssText = 'font-size:72px;margin-bottom:16px;animation:float 2s ease-in-out infinite;';
+  // Apply section color
+  document.getElementById('introName').style.background = `linear-gradient(135deg,${d.color1},${d.color2})`;
+  document.getElementById('introName').style.webkitBackgroundClip = 'text';
+  document.getElementById('introName').style.webkitTextFillColor = 'transparent';
+  toast('Nová sekce: ' + d.name + ' ' + d.icon);
+});
+
+ch.bind('game-started', () => {
+  show('sGame');
+  document.getElementById('gName').textContent = P.name;
+  document.getElementById('gScore').textContent = P.score;
+  confetti();
+  toast('Kvíz začal! 🌈');
+});
+
+ch.bind('new-question', d => {
+  fetch(SERVER + '/question/' + d.index)
+    .then(r => r.json())
+    .then(q => processNewQuestion(q))
+    .catch(() => processNewQuestion(d));
+});
+
+function processNewQuestion(d) {
+  P.curQ = d; P.answered = false; P.tMax = 60; P.subqIdx = -1;
+  show('sGame');
+  document.getElementById('waitQ').classList.add('hidden');
+  document.getElementById('activeQ').classList.remove('hidden');
+  document.getElementById('rPill').textContent = d.roundIcon + ' ' + d.round;
+  document.getElementById('qLbl').textContent = 'Otázka ' + (d.index+1);
+  document.getElementById('qMain').textContent = d.question;
+  document.getElementById('qPts').textContent = d.points + (d.points===1?' bod':' body');
+  document.getElementById('tNum').classList.add('hidden');
+  const listEl = document.getElementById('qList');
+  const imgEl = document.getElementById('qImgArea');
+  listEl.classList.add('hidden');
+  if(d.type==='list' && d.items) {
+    listEl.innerHTML = d.items.map(i=>`<div class="list-chip">${i}</div>`).join('');
+    listEl.classList.remove('hidden');
+    if(imgEl) imgEl.innerHTML = '';
+  } else if(d.type==='slideshow') {
+    if(imgEl) imgEl.innerHTML = `<div id="playerSlideshow" style="text-align:center;padding:16px 0;"><div id="psEmoji" style="font-size:64px;margin-bottom:10px;">⏳</div><div id="psName" style="font-family:'Fredoka One',sans-serif;font-size:26px;font-weight:800;">Připrav se!</div><div id="psCounter" style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:6px;"></div><div id="psDots" style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px;"></div></div>`;
+  } else if(d.image) {
+    if(imgEl) imgEl.innerHTML = `<img src="${d.image}" style="max-width:100%;border-radius:12px;margin-top:10px;border:2px solid rgba(255,255,255,0.12);">`;
+  } else {
+    if(imgEl) imgEl.innerHTML = '';
+  }
+  document.getElementById('revBox').classList.remove('on');
+  document.getElementById('closedBox').classList.remove('on');
+  const ri = document.getElementById('revImgArea'); if(ri) ri.innerHTML = '';
+  document.getElementById('ansIn').value = '';
+  document.getElementById('ansIn').placeholder = 'Odpovědět';
+  if(d.type === 'slideshow') {
+    document.getElementById('ansIn').disabled = true;
+    document.getElementById('subBtn').disabled = true;
+    document.getElementById('subBtn').classList.remove('done');
+    document.getElementById('subBtn').textContent = '⏳ Čekej na konec seznamu...';
+  } else if(d.hasSubqs) {
+    document.getElementById('ansIn').disabled = true;
+    document.getElementById('subBtn').disabled = true;
+    document.getElementById('subBtn').classList.remove('done');
+    document.getElementById('subBtn').textContent = '⏳ Sleduj video...';
+  } else {
+    document.getElementById('ansIn').disabled = false;
+    document.getElementById('subBtn').disabled = false;
+    document.getElementById('subBtn').classList.remove('done');
+    document.getElementById('subBtn').textContent = 'Odeslat odpověď ✓';
+  }
+}
+
+ch.bind('timer-tick', d => updateTimer(d.val, P.tMax));
+ch.bind('timer-end', () => {
+  updateTimer(0, P.tMax);
+  document.getElementById('ansIn').disabled = true;
+  document.getElementById('subBtn').disabled = true;
+  toast('⏰ Čas vypršel!');
+});
+
+ch.bind('shopping-countdown', d => {
+  // Show 30s writing countdown after shopping list
+  show('sGame');
+  document.getElementById('waitQ').classList.add('hidden');
+  document.getElementById('activeQ').classList.remove('hidden');
+  // Re-enable answer input
+  document.getElementById('ansIn').value = '';
+  document.getElementById('ansIn').disabled = false;
+  document.getElementById('ansIn').placeholder = 'Piš co si pamatuješ... (odděl čárkou)';
+  document.getElementById('subBtn').disabled = false;
+  document.getElementById('subBtn').classList.remove('done');
+  document.getElementById('subBtn').textContent = 'Odeslat seznam ✓';
+  document.getElementById('revBox').classList.remove('on');
+  document.getElementById('closedBox').classList.remove('on');
+  document.getElementById('tNum').classList.remove('hidden');
+  P.tMax = d.seconds;
+  updateTimer(d.seconds, d.seconds);
+  // Start visual countdown
+  let rem = d.seconds;
+  const intv = setInterval(() => {
+    rem--;
+    updateTimer(rem, d.seconds);
+    if(rem <= 0) {
+      clearInterval(intv);
+      document.getElementById('ansIn').disabled = true;
+      document.getElementById('subBtn').disabled = true;
+      toast('⏰ Čas na psaní vypršel!');
+    }
+  }, 1000);
+  toast('📝 30 sekund na napsání seznamu!');
+});
+
+ch.bind('shopping-time-up', () => {
+  document.getElementById('ansIn').disabled = true;
+  document.getElementById('subBtn').disabled = true;
+  document.getElementById('closedBox').classList.add('on');
+  toast('⏰ Čas vypršel!');
+});
+ch.bind('answer-revealed', d => {
+  document.getElementById('revVal').textContent = d.answer;
+  document.getElementById('revBox').classList.add('on');
+  const revImgArea = document.getElementById('revImgArea');
+  if(revImgArea && P.curQ && typeof P.curQ.index !== 'undefined') {
+    fetch(SERVER + '/question/' + P.curQ.index)
+      .then(r => r.json())
+      .then(fullQ => {
+        if(fullQ.answerImage && revImgArea) {
+          revImgArea.innerHTML = `<div style="margin-top:12px;"><div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--g);margin-bottom:6px;">📸 Celá fotka</div><img src="${fullQ.answerImage}" style="max-width:100%;border-radius:12px;border:2px solid rgba(61,170,85,0.4);"></div>`;
+        }
+      }).catch(()=>{});
+  }
+});
+
+ch.bind('shopping-item', d => {
+  const emojiEl = document.getElementById('psEmoji');
+  const nameEl = document.getElementById('psName');
+  const counterEl = document.getElementById('psCounter');
+  const dotsEl = document.getElementById('psDots');
+  if(!emojiEl) return;
+  if(d.done) { emojiEl.textContent='🎉'; nameEl.textContent='✅ Zapamatuj si!'; return; }
+  emojiEl.textContent = d.emoji;
+  nameEl.textContent = d.name;
+  if(counterEl) counterEl.textContent = (d.idx+1)+' / '+d.total;
+  if(dotsEl) dotsEl.innerHTML = Array.from({length:d.total},(_,i)=>
+    `<div style="width:8px;height:8px;border-radius:50%;background:${i<d.idx?'var(--g)':i===d.idx?'var(--y)':'rgba(255,255,255,0.2)'};transition:all 0.3s;${i===d.idx?'transform:scale(1.4);':''}"></div>`
+  ).join('');
+});
+
+ch.bind('pay-attention-subq', d => {
+  show('sGame');
+  document.getElementById('waitQ').classList.add('hidden');
+  document.getElementById('activeQ').classList.remove('hidden');
+  document.getElementById('qLbl').textContent = 'Podotázka '+(d.idx+1)+' / '+d.total;
+  document.getElementById('qMain').textContent = d.q;
+  document.getElementById('qPts').textContent = d.points+(d.points===1?' bod':' body');
+  document.getElementById('ansIn').value = '';
+  document.getElementById('ansIn').disabled = false;
+  document.getElementById('ansIn').placeholder = 'Odpovědět';
+  document.getElementById('subBtn').disabled = false;
+  document.getElementById('subBtn').classList.remove('done');
+  document.getElementById('subBtn').textContent = 'Odeslat odpověď ✓';
+  document.getElementById('revBox').classList.remove('on');
+  document.getElementById('revVal').textContent = '—';
+  document.getElementById('closedBox').classList.remove('on');
+  const ri = document.getElementById('revImgArea'); if(ri) ri.innerHTML = '';
+  P.answered = false;
+  P.subqIdx = d.idx;
+  toast('📺 Podotázka '+(d.idx+1)+' z '+d.total);
+});
+
+ch.bind('pay-attention-reveal-all', () => {
+  document.getElementById('ansIn').disabled = true;
+  document.getElementById('subBtn').disabled = true;
+  document.getElementById('closedBox').classList.add('on');
+});
+
+ch.bind('pay-attention-answer', d => {
+  // Show correct answer for current subq
+  document.getElementById('revVal').textContent = d.answer;
+  document.getElementById('revBox').classList.add('on');
+  // Lock input
+  document.getElementById('ansIn').disabled = true;
+  document.getElementById('subBtn').disabled = true;
+  toast('✅ Správná odpověď: ' + d.answer);
+});
+
+ch.bind('scoreboard', d => {
+  show('sScore');
+  confetti();
+  const ranks = ['🥇','🥈','🥉'];
+  document.getElementById('sbList').innerHTML = d.scores
+    .map((s,i) => `<div class="sb-row ${s.name===P.name?'me':''}">
+      <div class="sb-rank">${ranks[i]||(i+1)+'.'}</div>
+      <div class="sb-name">${s.name}${s.name===P.name?' 👈':''}</div>
+      <div class="sb-pts">${s.score}</div>
+    </div>`).join('');
+});
+
+async function submitAns() {
+  const text = document.getElementById('ansIn').value.trim();
+  if(!text) { toast('Napiš odpověď!'); return; }
+  if(P.answered) return;
+  P.answered = true;
+  document.getElementById('ansIn').disabled = true;
+  document.getElementById('subBtn').disabled = true;
+  document.getElementById('subBtn').classList.add('done');
+  document.getElementById('subBtn').textContent = '✓ Odesláno!';
+  try {
+    await fetch(SERVER+'/answer', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({playerId:P.id, name:P.name, answer:text, qIndex:P.curQ?.index, subqIdx: typeof P.subqIdx === 'number' ? P.subqIdx : -1})
+    });
+  } catch(e) { toast('❌ Chyba při odesílání'); }
+  toast('Odpověď odeslána! ✓');
+}
+
+function updateTimer(val, max) {
+  const el = document.getElementById('tNum');
+  el.textContent = val;
+  el.classList.toggle('warn', val<=10 && val>0);
+  const bar = document.getElementById('tBar');
+  bar.style.width = (max>0?(val/max)*100:0) + '%';
+  bar.style.background = val<=10
+    ? 'linear-gradient(90deg, #E8344A, #F4831F)'
+    : 'linear-gradient(90deg, #E8344A, #F4831F, #F9C22E, #3DAA55, #3B82F6, #8B5CF6)';
+}
+
+document.getElementById('nameIn').addEventListener('keydown', e => { if(e.key==='Enter') doJoin(); });
+</script>
+</body>
+</html>
